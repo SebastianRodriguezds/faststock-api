@@ -1,4 +1,4 @@
-const db = require('../src/db/postgres');
+const db = require('../db/postgres');
 
 
 async function init() {
@@ -12,7 +12,6 @@ stock INTEGER
 `);
 
 
-// Insertar algunos productos si la tabla está vacía
 const res = await db.query('SELECT count(*)::int as c FROM products');
 if (res.rows[0].c === 0) {
 await db.query("INSERT INTO products (name, price, stock) VALUES ('Producto A', 9.99, 100),( 'Producto B', 19.99, 50),( 'Producto C', 5.00, 200)");

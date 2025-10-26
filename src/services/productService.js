@@ -34,10 +34,18 @@ return stock;
 
 async function updateStock(id, newStock) {
 await db.query('UPDATE products SET stock=$1 WHERE id=$2', [newStock, id]);
-// invalidar cache
+
 await cache.del(`product:${id}:stock`);
 await cache.del(`product:${id}:full`);
 }
 
+async function getProducts(offset, limit) {
+    const res = await db.query(
+        'SELECT id, name, price, stock, FROM products ORDER BY id LIMIT $1 OFFSET $2',
+        [limit, offset]
+    );
+    return res.rows;
+}
 
-module.exports = { getProduct, getStock, updateStock };
+
+module.exports = { getProduct, getStock, updateStock,getProducts };

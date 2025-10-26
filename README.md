@@ -35,3 +35,7 @@ Note: All frequent queries are cached in Redis to improve performance (when cach
 Add API instances behind a load balancer
 Read replicas for Redis and PostgreSQL
 Cluster Mode and Node.js or PM2 to take advantage of multi-core CPUs
+
+## Fail tolerance
+If Redis temporarily fails, the API continues to function by querying PostgreSQL directly. Only performance is momentarily lost.
+
