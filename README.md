@@ -47,6 +47,27 @@ Note: All frequent queries are cached in Redis to improve performance (when cach
 **Console output (k6 real test)**
 ![k6 load test result](./images/k6-results.png)
 
+## Performance metrics (Stock endpoint)
+| Metric                 | Value              |
+|------------------------|--------------------|
+| Average latency        | 84.9 ms            |
+| p90 latency            | 102.2 ms           |
+| p95 latency            | 124.8 ms           |
+| Maximum throughput     | ~2,203 req/s       |
+| Total requests         | 66,305             |
+| Failed requests        | 0%                 |
+| Virtual users          | 300                |
+| Duration               | 30s                |
+>These results were obtained using [k6](http://k6.io) with 300 concurrent users hitting the `/api/products/:id/stock` endpoint, powered by Redis caching.
+
+**Console output (k6 real test)**
+![k6 load test result](./images/k6-results2.png)
+
+## Comparison and conclusions
+The /api/products enpoint (paginated list) achieves an average latency below 10ms, thanks to Redis caching and simple SELECT queries.
+The /api/products/:id/stock endpoint shows higher latency(~85 ms average) since it performs more granular lookups, but remains well within acceptable limits under 300 concurrent users and > 2,200 req/s throughput.
+Both endpoints maintained 0% failure rate, demonstrating good scalability and stability for read-heavy operations.
+
 ## Scalability
 Deploy multiple API instances behind a load balancer
 Use Read replicas for Redis and PostgreSQL
