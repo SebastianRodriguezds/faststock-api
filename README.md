@@ -3,24 +3,24 @@
 ## Project objective
 FastStock API is a REST API designed to efficiently handle thousands of concurrent requests. The project demonstrates scale, performance, and resilience, using PostgreSQL as the data source and Redis as the cache for frequent reads.
 
-There is no frontend: the focus is on scalable backend design and load testing.
+There is no frontend: the focus is on **backend scalability and load testing**.
 
 ## Technology stack
 * Node.js + Express
 * PostgreSQL
 * Redis
-* Docker / docker-compose
-* Locust / k6 for load testing
+* Docker / Docker-Compose
+* k6 (for load testing)
 
 ## Local installation
-git close https://github.com/SebastianRodriguezds/faststock-api
+git clone https://github.com/SebastianRodriguezds/faststock-api
 cd faststock-api
 docker-compose up --build -d
 
 ## Current endpoints
 * GET /api/products/:id → Get product details by ID
-* GET /api/products/:id/stock → Get product details by ID
-* POST /api/products/:id/update-stock → Get product details by ID
+* GET /api/products/:id/stock → Get stock quantiy for a product
+* POST /api/products/:id/update-stock → Update stock quantity for a product
 Note: All frequent queries are cached in Redis to improve performance (when caching is implemented).
 
 ## Performance metrics (example)
@@ -31,10 +31,26 @@ Note: All frequent queries are cached in Redis to improve performance (when cach
 | Cache hits            | 87% (simulated) |
 | CPU usage (500 VUs)   | 45% (simulated) |
 
+## Performance metrics (real test result)
+| Metric                | Value               |
+|------------------------|--------------------|
+| Average latency        | 8.9 ms             |
+| p90 latency            | 15.05 ms           |
+| p95 latency            | 18.9 ms            |
+| Maximum throughput     | ~3366 req/s        |
+| Total requests         | 101,208 (30s)      |
+| Failed requests        | 0%**               |
+| Virtual users (VUs)    | 200                |
+| Test duration          | 30 seconds**       |
+>These results were obtained using [k6](http://k6.io) with 200 concurrent users hitting the `/api/products?page=X&limit=10` endpoint, powered by Redis caching.
+
+**Console output (k6 real test)**
+![k6 load test result](./images/k6-results.png)
+
 ## Scalability
-Add API instances behind a load balancer
-Read replicas for Redis and PostgreSQL
-Cluster Mode and Node.js or PM2 to take advantage of multi-core CPUs
+Deploy multiple API instances behind a load balancer
+Use Read replicas for Redis and PostgreSQL
+Run in Cluster Mode (Node.js/PM2) to take advantage of multi-core CPUs
 
 ## Fail tolerance
 If Redis temporarily fails, the API continues to function by querying PostgreSQL directly. Only performance is momentarily lost.
