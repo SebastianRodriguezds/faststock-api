@@ -68,6 +68,20 @@ The /api/products enpoint (paginated list) achieves an average latency below 10m
 The /api/products/:id/stock endpoint shows higher latency(~85 ms average) since it performs more granular lookups, but remains well within acceptable limits under 300 concurrent users and > 2,200 req/s throughput.
 Both endpoints maintained 0% failure rate, demonstrating good scalability and stability for read-heavy operations.
 
+## Monitoring with Prometheus & Grafana
+The API expose a /metrics endpoint that Prometheus scrapes to collect performance metrics. These metrics include:
+* Requests per second per endpoint
+* HTTP error counts (4xx/5xx)
+* Latency per endpoint (average, p90, p95)
+
+These metrics allow tracking the health and performance of the API under local.
+
+Example Grafana dashboard
+![Grafana dashboard](./images/grafana-dashboard.png)
+Requests per second, errors, and latency per endpoint during a sample load test.
+
+By monitoring these metrics, we can identify slow endpoints, track error rates, and ensure the API maintains low latency even under high concurrency.
+
 ## Scalability
 Deploy multiple API instances behind a load balancer
 Use Read replicas for Redis and PostgreSQL
