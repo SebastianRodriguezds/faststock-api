@@ -1,32 +1,51 @@
 const express = require('express');
 const router = express.Router();
 const productService = require('../services/productService');
-const cache = require('../db/redis');
+const { getWithRetry, setWithRetry } = require('../db/redis');
 const db = require('../db/postgres');
+const { withRetry } = require('../utils/retry');
 require('dotenv').config();
 
 const CACHE_TTL = Number(process.env.CACHE_TTL_SECONDS || 60);
 
-router.get('/', async (req, res)=> {
-    let { page = 1, limit = 10} = req.query;
-    page = Number(page);
-    limit = Number(limit);
-    const offset = (page - 1) * limit;
+router.get('/', async (req, res) => {
+  let { page = 1, limit = 10 } = req.query;
+  page = Number(page);
+  limit = Number(limit);
+  const offset = (page - 1) * limit;
+
+  try {
+    const cacheKey = `products:page${page}:limit:${limit}`;
+
+    let cached;
+    try {
+      cached = await getWithRetry(cacheKey);
+    } catch (err) {
+      console.warn('Redis get failed after retries:', err.message);
+    }
+
+    if (cached) {
+      console.log(`[Cache hit] ${cacheKey}`);
+      return res.json(JSON.parse(cached));
+    }
+
+    const result = await db.query(
+      'SELECT id, name, price, stock FROM products ORDER BY id LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
 
     try {
-        const cacheKey = `products:page${page}:limit:${limit}`;
-        const cached = await cache.get(cacheKey);
-        if (cached) return res.json(JSON.parse(cached));
-        
-        const result = await db.query(
-            'SELECT id, name, price, stock FROM products ORDER BY id LIMIT $1 OFFSET $2',
-            [limit, offset]
-        );
-        await cache.set(cacheKey, JSON.stringify(result.rows), 'EX', CACHE_TTL);
-        res.json(result.rows);
+      await setWithRetry(cacheKey, JSON.stringify(result.rows), 'EX', CACHE_TTL);
+      console.log(`[Cache set] ${cacheKey}`);
     } catch (err) {
-        res.status(500).json({error : err.message});
+      console.warn('Redis set failed after retries:', err.message);
     }
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Unexpected error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get("/:id", async (req, res) => {
